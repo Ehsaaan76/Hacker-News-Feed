@@ -36,10 +36,10 @@ const StoryCardComponent = ({ story, onPress }: Props) => {
       </View>
 
       <View className="flex-row justify-end space-x-6 border-t border-gray-50 pt-3 mt-1">
-        <TouchableOpacity onPress={() => handleOptimisticAction(story.objectID, 'like')} className="p-1">
+        <TouchableOpacity onPress={() => handleOptimisticAction(story, 'like')} className="p-1">
           <Heart size={22} color={isLiked ? '#ef4444' : '#9ca3af'} fill={isLiked ? '#ef4444' : 'transparent'} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleOptimisticAction(story.objectID, 'save')} className="p-1">
+        <TouchableOpacity onPress={() => handleOptimisticAction(story, 'save')} className="p-1">
           <Bookmark size={22} color={isSaved ? '#3b82f6' : '#9ca3af'} fill={isSaved ? '#3b82f6' : 'transparent'} />
         </TouchableOpacity>
       </View>

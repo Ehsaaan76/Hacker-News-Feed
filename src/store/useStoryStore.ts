@@ -2,8 +2,9 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
+import type { Story } from '../types';
 
-type PersistedStoryState = Pick<StoryState, 'savedStoryIds' | 'likedStoryIds'>;
+type PersistedStoryState = Pick<StoryState, 'savedStoryIds' | 'savedStoriesById' | 'likedStoryIds'>;
 
 const memoryStorage = new Map<string, string>();
 
@@ -39,11 +40,13 @@ const safeStorage: StateStorage = (() => {
 
 interface StoryState {
   savedStoryIds: Record<string, boolean>;
+  savedStoriesById: Record<string, Story>;
   likedStoryIds: Record<string, boolean>;
-  toggleSave: (id: string) => void;
+  toggleSave: (story: Story) => void;
   toggleLike: (id: string) => void;
+  syncSavedStories: (stories: Story[]) => void;
   // We include revert functions to handle the 15% failure rate rollback requirement
-  revertSave: (id: string) => void;
+  revertSave: (story: Story) => void;
   revertLike: (id: string) => void;
 }
 
@@ -51,15 +54,26 @@ export const useStoryStore = create<StoryState>()(
   persist(
     (set) => ({
       savedStoryIds: {},
+      savedStoriesById: {},
       likedStoryIds: {},
 
-      toggleSave: (id) =>
-        set((state) => ({
-          savedStoryIds: {
+      toggleSave: (story) =>
+        set((state) => {
+          const isSaved = !!state.savedStoryIds[story.objectID];
+          const savedStoryIds = {
             ...state.savedStoryIds,
-            [id]: !state.savedStoryIds[id],
-          },
-        })),
+            [story.objectID]: !isSaved,
+          };
+          const savedStoriesById = { ...state.savedStoriesById };
+
+          if (isSaved) {
+            delete savedStoriesById[story.objectID];
+          } else {
+            savedStoriesById[story.objectID] = story;
+          }
+
+          return { savedStoryIds, savedStoriesById };
+        }),
 
       toggleLike: (id) =>
         set((state) => ({
@@ -69,13 +83,36 @@ export const useStoryStore = create<StoryState>()(
           },
         })),
 
-      revertSave: (id) =>
-        set((state) => ({
-          savedStoryIds: {
+      syncSavedStories: (stories) =>
+        set((state) => {
+          const savedStoriesById = { ...state.savedStoriesById };
+
+          for (const story of stories) {
+            if (state.savedStoryIds[story.objectID]) {
+              savedStoriesById[story.objectID] = story;
+            }
+          }
+
+          return { savedStoriesById };
+        }),
+
+      revertSave: (story) =>
+        set((state) => {
+          const isSaved = !!state.savedStoryIds[story.objectID];
+          const savedStoryIds = {
             ...state.savedStoryIds,
-            [id]: !state.savedStoryIds[id],
-          },
-        })),
+            [story.objectID]: !isSaved,
+          };
+          const savedStoriesById = { ...state.savedStoriesById };
+
+          if (isSaved) {
+            delete savedStoriesById[story.objectID];
+          } else {
+            savedStoriesById[story.objectID] = story;
+          }
+
+          return { savedStoryIds, savedStoriesById };
+        }),
 
       revertLike: (id) =>
         set((state) => ({
@@ -90,6 +127,7 @@ export const useStoryStore = create<StoryState>()(
       storage: createJSONStorage(() => safeStorage),
       partialize: (state): PersistedStoryState => ({
         savedStoryIds: state.savedStoryIds,
+        savedStoriesById: state.savedStoriesById,
         likedStoryIds: state.likedStoryIds,
       }),
     }
