@@ -1,54 +1,69 @@
 # Hacker News Feed
 
-A modern, high-performance Hacker News feed built with React Native, Bare CLI, TypeScript, and Nativewind. Designed for speed, smooth scrolling, and optimistic UX.
+A React Native Hacker News reader built with TypeScript, FlashList, Zustand, MMKV, TanStack Query, and NativeWind. The app focuses on a fast feed, optimistic save/like actions, and a dedicated saved reels screen.
 
-## 🚀 Quick Start (Run Instructions)
+## Run Locally
 
-1. **Install Dependencies**
+1. Install dependencies.
+
    ```sh
    npm install
    ```
 
-2. **Start Metro Bundler**
+2. Start Metro.
+
    ```sh
    npm start
    ```
 
-3. **Run on Android** (In a new terminal window)
+3. Run the Android app in a second terminal.
+
    ```sh
    npm run android
    ```
-   *Note: If you run into Metro port conflicts, use `npm run android --no-packager` while Metro is running.*
 
-## 🏗️ Architectural Trade-offs & Decisions
+If Metro complains about port 8081, stop the process using that port and restart it with `npm start -- --reset-cache`.
 
-### 1. List Rendering: FlashList vs FlatList
-I chose **Shopify's FlashList** over the standard `FlatList`. FlashList recycles views under the hood (similar to RecyclerView on Android), which provides a buttery smooth infinite feed even at scale. It significantly outperforms `FlatList` in memory usage and frame rates, which is crucial for an infinite scrolling app.
+## Tested Platforms
 
-### 2. Local Persistence: MMKV vs AsyncStorage
-For saving state locally, I used **react-native-mmkv**. It is a synchronous, high-performance C++ key-value store that is vastly faster than `AsyncStorage`. This ensures that loading saved stories is instantaneous and doesn't block the UI thread.
+I tested the project on Android in the current Windows development environment. The app starts with `npx react-native run-android`, and the Jest smoke test also passes locally.
 
-### 3. State Management & Data Fetching
-- **TanStack Query (React Query)**: Handles the Algolia API fetching, infinite scrolling (`useInfiniteQuery`), caching, and provides a clean foundation for our network layer.
-- **Zustand + MMKV**: Manages the global state for "Liked" and "Saved" stories. Zustand provides a minimalistic, clean API, and hooking it up with MMKV ensures our optimistic UI state is persisted instantly.
+## Architectural Decisions
 
-### 4. Optimistic UI & Error Rollbacks
-When a user "Likes" or "Saves" a story, the UI updates **instantly** via Zustand. 
-Simultaneously, a mock API request fires with a 300-800ms delay and a 15% failure rate. If the request fails, the state manager gracefully rolls back the UI to its previous state and alerts the user via a non-blocking `react-native-toast-message`.
+### FlashList for feed rendering
+I used **FlashList** instead of `FlatList` because the feed is infinite and scroll-heavy. FlashList recycles views more efficiently, which gives better memory usage and smoother scrolling than a plain `FlatList`.
 
-## 🎨 UI & UX Design
-The app leverages **Nativewind** to bring Tailwind CSS to React Native.
-- **Aesthetic**: Minimalist and modern with a clean brand-orange identity.
-- **Micro-interactions**: Uses floating headers, pill badges, and distinct active states.
-- **Edge Cases Handling**: Stories from "Ask HN" that return `null` for URLs are handled gracefully. Instead of a broken webview, they open a custom modal displaying the `story_text`.
+### TanStack Query for feed fetching
+The feed is loaded with **`useInfiniteQuery`** so pagination, caching, refetching, and loading states stay isolated from the UI. That keeps the feed screen focused on rendering and interaction.
 
-## 🤖 AI Usage
-AI assistance was used during the development of this project. Specifically:
-- **Mock Function & Scaffold**: AI helped scaffold the initial Nativewind setup (v4 configuration) and generate the simulated delay/failure mock function (`mockToggleAction`). The 15% failure rate was subsequently verified by logging the randomized outcomes.
-- **UI Tweaks**: AI was used to migrate generic React Native `StyleSheet` objects into responsive Tailwind utility classes via Nativewind.
+### Zustand + MMKV for saved state
+Saved and liked stories are managed in **Zustand** and persisted with **MMKV**. This is faster than AsyncStorage and makes saved items available immediately on app launch.
 
-## 🔮 Future Improvements
-Given more time, I would focus on:
-- **Testing**: Adding comprehensive E2E tests using Detox and unit tests with Jest to guarantee the stability of the optimistic rollback logic.
-- **Offline Support**: Caching the actual feed data (not just liked/saved IDs) so the app is fully functional offline.
-- **iOS Polish**: While the logic is cross-platform, I would dedicate time to fine-tune iOS-specific UI nuances (e.g., specific safe area insets and shadow rendering).
+### Persisted saved-story snapshots
+Saved reels need more than just IDs, so I store full saved story snapshots in the app state. That allows the saved reels screen to render items and unsave them without needing the live feed to be present at the same moment.
+
+### Screen switching without a routing dependency
+I kept the feed and saved reels views in a simple animated app shell rather than adding a full navigation library. That reduced complexity for a two-screen flow and let me control the left/right transition direction directly.
+
+### Optimistic actions with rollback
+Likes and saves update immediately in the UI, then a mock API call runs with a small delay and a failure rate. If it fails, the store rolls back the change and shows a toast so the interaction still feels responsive.
+
+## What I Would Add With More Time
+
+- Add offline feed caching so the app can open even without the network.
+- Add a real navigation stack or bottom tabs if the app grows beyond two screens.
+- Add unit tests for the saved-story store and optimistic rollback flow.
+- Add Detox or another end-to-end test layer for pull-to-refresh and screen switching.
+
+## AI Assistance And Verification
+
+AI assistance was used for the initial NativeWind setup, the optimistic action flow, and parts of the screen/layout implementation. I verified the output by:
+
+- Running `npm test -- --runInBand` and confirming the Jest smoke test passed.
+- Running `npx react-native run-android` successfully on Android.
+- Checking TypeScript/problem output after edits to catch compile issues such as invalid styles or gesture-handler changes.
+
+## Notes
+
+- Pull-to-refresh is handled on the feed screen.
+- Saved reels are persisted locally and can be unsaved from the saved screen.
