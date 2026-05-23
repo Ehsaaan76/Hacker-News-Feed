@@ -14,8 +14,7 @@ export const FeedScreen = () => {
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch, isRefetching } = useHackerNews();
     const [selectedStory, setSelectedStory] = useState<Story | null>(null);
 
-    // 1. Create a ref to control the list
-    const listRef = useRef<FlashListRef<any> | null>(null);
+    const listRef = useRef<FlashListRef<Story> | null>(null);
 
     const stories = useMemo(() => {
         return data?.pages.flatMap((page) => page.hits) ?? [];
@@ -35,28 +34,19 @@ export const FeedScreen = () => {
         <StoryCard story={item} onPress={() => handleStoryPress(item)} />
     ), [handleStoryPress]);
 
-    // 2. Scroll to top function
     const scrollToTop = () => {
         listRef.current?.scrollToOffset({ offset: 0, animated: true });
     };
-
-    if (isLoading) {
-        return (
-            <View className="flex-1 bg-gray-50" style={styles.loadingScreen}>
-                {[1, 2, 3, 4].map((k) => <SkeletonCard key={k} />)}
-            </View>
-        );
-    }
 
     return (
         <View className="flex-1 bg-gray-50" style={styles.screen}>
             <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
 
+            {/* 1. FLOATING HEADER RETURNED: Set to absolute so posts slide behind it */}
             <View
-                className="absolute top-10 left-4 right-4 z-10 flex-row items-center justify-between bg-white/95 rounded-2xl px-6 py-4"
+                className="absolute left-4 right-4 z-10 flex-row items-center justify-between bg-white/95 rounded-2xl px-6 py-4"
                 style={styles.headerCard}
             >
-                {/* 3. Make the header clickable to scroll to top */}
                 <TouchableOpacity onPress={scrollToTop} activeOpacity={0.7} className="flex-row items-center gap-2">
                     <View className="w-8 h-8 bg-orange-500 rounded-xl items-center justify-center">
                         <Rss size={16} color="#fff" />
@@ -69,55 +59,67 @@ export const FeedScreen = () => {
                 </View>
             </View>
 
-            <FlashList<Story>
-                ref={listRef} // Attach the ref here
-                data={stories}
-                renderItem={renderItem}
-                keyExtractor={(item, index) => `${item.objectID}-${index}`}
-                // @ts-ignore
-                estimatedItemSize={214}
-                drawDistance={1000}
-                contentContainerStyle={styles.listContent}
+            {/* 2. LOADING STATE ALIGNMENT */}
+            {isLoading ? (
+                <View className="flex-1" style={{ paddingTop: 85 }}>
+                    {[1, 2, 3, 4].map((k) => <SkeletonCard key={k} />)}
+                </View>
+            ) : (
+                <FlashList<Story>
+                    ref={listRef}
+                    data={stories}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => `${item.objectID}-${index}`}
+                    // @ts-ignore
+                    estimatedItemSize={250}
+                    drawDistance={1000}
+                    
+                    // 3. NO MORE PADDING TOP: This fixes the momentum scroll bug!
+                    contentContainerStyle={{ paddingBottom: 100 }}
 
-                onEndReached={() => {
-                    if (hasNextPage && !isFetchingNextPage) {
-                        fetchNextPage();
+                    // 4. THE MAGIC SPACER: Pushes the first post down below the floating header
+                    ListHeaderComponent={<View style={{ height: 85 }} />}
+
+                    onEndReached={() => {
+                        if (hasNextPage && !isFetchingNextPage) {
+                            fetchNextPage();
+                        }
+                    }}
+                    onEndReachedThreshold={1}
+
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefetching}
+                            onRefresh={async () => {
+                                await refetch();
+                                Toast.show({
+                                    type: 'success',
+                                    text1: 'Feed Refreshed',
+                                    text2: 'Fetched latest stories from Hacker News.',
+                                    position: 'bottom',
+                                });
+                            }}
+                            // 5. Offset the spinner so it pops out precisely below the floating header
+                            progressViewOffset={96} 
+                            colors={['#f97316']}
+                            tintColor="#f97316"
+                        />
                     }
-                }}
-                onEndReachedThreshold={1}
 
-                // 4. Use RefreshControl to push the spinner below the header
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefetching}
-                        onRefresh={async () => {
-                            await refetch();
-                            Toast.show({
-                                type: 'success',
-                                text1: 'Feed Refreshed',
-                                text2: 'Fetched latest stories from Hacker News.',
-                                position: 'bottom',
-                            });
-                        }}
-                        progressViewOffset={110} // This pushes it down!
-                        colors={['#f97316']} // Matches your orange theme
-                        tintColor="#f97316"
-                    />
-                }
-
-                ListFooterComponent={
-                    isFetchingNextPage ? (
-                        <View>
-                            <SkeletonCard />
-                            <SkeletonCard />
-                            <View className="py-4 items-center justify-center">
-                                <ActivityIndicator size="small" color="#f97316" />
-                                <Text className="text-gray-400 text-xs mt-2 font-medium">Loading more stories...</Text>
+                    ListFooterComponent={
+                        isFetchingNextPage ? (
+                            <View>
+                                <SkeletonCard />
+                                <SkeletonCard />
+                                <View className="py-4 items-center justify-center">
+                                    <ActivityIndicator size="small" color="#f97316" />
+                                    <Text className="text-gray-400 text-xs mt-2 font-medium">Loading more stories...</Text>
+                                </View>
                             </View>
-                        </View>
-                    ) : null
-                }
-            />
+                        ) : null
+                    }
+                />
+            )}
 
             <StoryModal story={selectedStory} onClose={() => setSelectedStory(null)} />
         </View>
@@ -128,19 +130,11 @@ const styles = StyleSheet.create({
     screen: {
         flex: 1,
     },
-    loadingScreen: {
-        flex: 1,
-        paddingTop: 96,
-    },
     headerCard: {
         elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 12,
-    },
-    listContent: {
-        paddingTop: 112,
-        paddingBottom: 100,
     },
 });
