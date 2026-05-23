@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { View, Text, ActivityIndicator, StatusBar, Linking, TouchableOpacity, StyleSheet, PanResponder } from 'react-native';
+import { View, Text, ActivityIndicator, StatusBar, Linking, TouchableOpacity, StyleSheet, PanResponder, RefreshControl } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import Toast from 'react-native-toast-message';
 import { Bookmark, Rss } from 'lucide-react-native';
@@ -129,6 +129,16 @@ export const FeedScreen = ({ onOpenSaved }: FeedScreenProps) => {
 
                     // 4. THE MAGIC SPACER: Pushes the first post down below the floating header
                     ListHeaderComponent={<View style={styles.listHeaderSpacer} />}
+
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefetching}
+                            onRefresh={handleRefresh}
+                            progressViewOffset={96}
+                            colors={['#f97316']}
+                            tintColor="#f97316"
+                        />
+                    }
 
                     onEndReached={() => {
                         if (hasNextPage && !isFetchingNextPage) {
