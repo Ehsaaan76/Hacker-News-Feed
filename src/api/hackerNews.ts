@@ -41,7 +41,7 @@ const fallbackStories: AlgoliaResponse = {
 
 export const fetchStories = async (pageParam: number = 0): Promise<AlgoliaResponse> => {
   try {
-    const response = await fetch(`${BASE_URL}/search_by_date?tags=story&page=${pageParam}&hitsPerPage=20`);
+    const response = await fetch(`${BASE_URL}/search?tags=story&page=${pageParam}&hitsPerPage=20`);
 
     if (!response.ok) {
       throw new Error('Network response was not ok');

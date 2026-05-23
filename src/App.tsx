@@ -1,5 +1,5 @@
 import React, { Component, type ReactNode } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
@@ -31,7 +31,7 @@ export default function App() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <SafeAreaView className="flex-1 bg-gray-50" style={{ flex: 1 }}>
+          <SafeAreaView className="flex-1 bg-gray-50" style={styles.safeArea}>
             <FeedScreen />
           </SafeAreaView>
           <Toast />
@@ -40,3 +40,9 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+});

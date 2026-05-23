@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback, useRef, ComponentRef } from 'react';
-import { View, Text, ActivityIndicator, StatusBar, Linking, RefreshControl, TouchableOpacity } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
+import { View, Text, ActivityIndicator, StatusBar, Linking, RefreshControl, TouchableOpacity, StyleSheet } from 'react-native';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import Toast from 'react-native-toast-message';
 import { Rss } from 'lucide-react-native';
 
@@ -15,7 +15,7 @@ export const FeedScreen = () => {
     const [selectedStory, setSelectedStory] = useState<Story | null>(null);
 
     // 1. Create a ref to control the list
-    const listRef = useRef<ComponentRef<typeof FlashList>>(null);
+    const listRef = useRef<FlashListRef<any> | null>(null);
 
     const stories = useMemo(() => {
         return data?.pages.flatMap((page) => page.hits) ?? [];
@@ -42,19 +42,19 @@ export const FeedScreen = () => {
 
     if (isLoading) {
         return (
-            <View className="flex-1 bg-gray-50 pt-24" style={{ flex: 1, paddingTop: 96 }}>
+            <View className="flex-1 bg-gray-50" style={styles.loadingScreen}>
                 {[1, 2, 3, 4].map((k) => <SkeletonCard key={k} />)}
             </View>
         );
     }
 
     return (
-        <View className="flex-1 bg-gray-50" style={{ flex: 1 }}>
+        <View className="flex-1 bg-gray-50" style={styles.screen}>
             <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
 
             <View
                 className="absolute top-10 left-4 right-4 z-10 flex-row items-center justify-between bg-white/95 rounded-2xl px-6 py-4"
-                style={{ elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 12 }}
+                style={styles.headerCard}
             >
                 {/* 3. Make the header clickable to scroll to top */}
                 <TouchableOpacity onPress={scrollToTop} activeOpacity={0.7} className="flex-row items-center gap-2">
@@ -75,15 +75,16 @@ export const FeedScreen = () => {
                 renderItem={renderItem}
                 keyExtractor={(item, index) => `${item.objectID}-${index}`}
                 // @ts-ignore
-                estimatedItemSize={250}
-                contentContainerStyle={{ paddingTop: 112, paddingBottom: 100 }}
+                estimatedItemSize={214}
+                drawDistance={1000}
+                contentContainerStyle={styles.listContent}
 
                 onEndReached={() => {
                     if (hasNextPage && !isFetchingNextPage) {
                         fetchNextPage();
                     }
                 }}
-                onEndReachedThreshold={0.8}
+                onEndReachedThreshold={1}
 
                 // 4. Use RefreshControl to push the spinner below the header
                 refreshControl={
@@ -106,9 +107,13 @@ export const FeedScreen = () => {
 
                 ListFooterComponent={
                     isFetchingNextPage ? (
-                        <View className="py-8 items-center justify-center h-24">
-                            <ActivityIndicator size="large" color="#f97316" />
-                            <Text className="text-gray-400 text-xs mt-2 font-medium">Loading more stories...</Text>
+                        <View>
+                            <SkeletonCard />
+                            <SkeletonCard />
+                            <View className="py-4 items-center justify-center">
+                                <ActivityIndicator size="small" color="#f97316" />
+                                <Text className="text-gray-400 text-xs mt-2 font-medium">Loading more stories...</Text>
+                            </View>
                         </View>
                     ) : null
                 }
@@ -118,3 +123,24 @@ export const FeedScreen = () => {
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+    },
+    loadingScreen: {
+        flex: 1,
+        paddingTop: 96,
+    },
+    headerCard: {
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+    },
+    listContent: {
+        paddingTop: 112,
+        paddingBottom: 100,
+    },
+});

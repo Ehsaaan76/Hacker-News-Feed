@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Heart, Bookmark } from 'lucide-react-native';
 import { Story } from '../types';
 import { useStoryStore } from '../store/useStoryStore';
@@ -22,7 +22,7 @@ const StoryCardComponent = ({ story, onPress }: Props) => {
       activeOpacity={0.8} 
       onPress={onPress} 
       className="bg-white p-5 mb-4 mx-4 rounded-3xl border border-gray-100"
-      style={{ elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }}
+      style={styles.card}
     >
       <Text className="text-lg font-bold text-gray-900 mb-3 leading-snug">{story.title}</Text>
       
@@ -50,4 +50,14 @@ const StoryCardComponent = ({ story, onPress }: Props) => {
 // React.memo prevents re-renders unless the props change, saving massive CPU cycles during scroll
 export const StoryCard = memo(StoryCardComponent, (prevProps, nextProps) => {
   return prevProps.story.objectID === nextProps.story.objectID;
+});
+
+const styles = StyleSheet.create({
+  card: {
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
 });

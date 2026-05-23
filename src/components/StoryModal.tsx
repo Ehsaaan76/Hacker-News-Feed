@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { Story } from '../types';
@@ -17,7 +17,7 @@ export const StoryModal = ({ story, onClose }: Props) => {
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView className="flex-1 bg-white" style={{ flex: 1 }}>
+      <SafeAreaView className="flex-1 bg-white" style={styles.safeArea}>
         <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-100">
           <Text className="flex-1 text-base font-bold text-gray-900 mr-3" numberOfLines={1}>
             {story?.title}
@@ -30,7 +30,7 @@ export const StoryModal = ({ story, onClose }: Props) => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
+        <ScrollView className="flex-1" contentContainerStyle={styles.content}>
           <Text className="text-base leading-7 text-gray-700">
             {story?.story_text?.replace(/<[^>]+>/g, '') ?? ''}
           </Text>
@@ -39,3 +39,13 @@ export const StoryModal = ({ story, onClose }: Props) => {
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  content: {
+    padding: 20,
+    paddingBottom: 48,
+  },
+});
