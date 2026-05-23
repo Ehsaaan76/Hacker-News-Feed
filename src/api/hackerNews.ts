@@ -36,7 +36,7 @@ const fallbackStories: AlgoliaResponse = {
     },
   ],
   page: 0,
-  nbPages: 1,
+  nbPages: 50,
 };
 
 export const fetchStories = async (pageParam: number = 0): Promise<AlgoliaResponse> => {
