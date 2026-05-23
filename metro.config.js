@@ -7,9 +7,6 @@ const { withNativeWind } = require('nativewind/metro');
  *
  * @type {import('metro-config').MetroConfig}
  */
-const config = {};
+const config = mergeConfig(getDefaultConfig(__dirname), {});
 
-const finalConfig = mergeConfig(getDefaultConfig(__dirname), config);
-
-// This tells Metro to process Tailwind styles using your global.css file
-module.exports = withNativeWind(finalConfig, { input: './global.css' });
+module.exports = withNativeWind(config, { input: './global.css' });
